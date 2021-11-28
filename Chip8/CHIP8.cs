@@ -26,33 +26,49 @@ namespace Chip8
 
         internal void Executar()
         {
-            byte dado = this.Memory.ElementAt(this.PC);
+            while (true)
+            {
+                byte dado = this.Memory.ElementAt(this.PC);
             
-            this.PC += 1;
-            byte dado2 = this.Memory.ElementAt(this.PC);
-
-            ushort opcode = (ushort)(dado << 8 | dado2);
-
-            ushort vv = (ushort)(0x1000 & opcode);
-            Debug.WriteLine(Convert.ToString(opcode, 2));
-
-
-            if (opcode >> 12 == 0x1)
-            {
-                this.PC = (ushort)(opcode ^ (ushort) 0x1000);
-            }
-            else if (opcode >> 12 == 0x6)
-            {
-                ushort registrador = ((ushort)((ushort)(opcode ^ 0x6000) >> 8));
-                this.Registers[registrador] = ((byte)(registrador << 0x8 ^ opcode^0x6000));
                 this.PC += 1;
-            }
-            else
-            {
-                throw new Exception(String.Format("Instrução não implementada: {0}",opcode));
-            }
+                byte dado2 = this.Memory.ElementAt(this.PC);
 
+                ushort opcode = (ushort)(dado << 8 | dado2);
 
+                if (opcode >> 12 == 0x1)
+                {
+                    this.PC = (ushort)(opcode ^ 0x1000);
+                }
+                else if (opcode >> 12 == 0x6)
+                {
+                    ushort registrador = ((ushort)((ushort)(opcode ^ 0x6000) >> 8));
+                    this.Registers[registrador] = (byte) (registrador << 0x8 ^ opcode^0x6000);
+                    this.PC += 1;
+                }
+                else if(opcode >> 12 == 0xa)
+                {
+                    ushort endereco = (ushort) (opcode ^ 0xa000);
+                    this.I = endereco;
+                    this.PC += 1;
+                }
+                else if (opcode >> 12 == 0xd)
+                {
+                    ushort op = ((ushort)(opcode ^ 0xd000));
+
+                    ushort registrador_1 = (ushort) (op >> 8);
+                    ushort registrador_2 = (ushort) (op >> 4 ^ registrador_1 << 4);
+
+                    // Apenas retornando dados para ver.
+                    ushort dado_1 = this.Memory[registrador_1];
+                    ushort dado_2 = this.Memory[registrador_2];
+
+                    this.PC += 1;
+                }
+                else
+                {
+                    throw new Exception(String.Format("Instrução não implementada: {0}",opcode));
+                }
+            }
         }
 
         public void CarregarROM(byte[] rom)
