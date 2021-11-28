@@ -1,17 +1,17 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Chip8;
 
-int tamanhoROM = 0;
+int romLength = 0;
 byte[] romArray;
 
 using (BinaryReader rom = new BinaryReader(File.Open("test_opcode.ch8", FileMode.Open)))
 {
-    tamanhoROM = Convert.ToInt32(rom.BaseStream.Length);
+    romLength = Convert.ToInt32(rom.BaseStream.Length);
     
-    romArray = new byte[tamanhoROM];
-    romArray = rom.ReadBytes(tamanhoROM);
+    romArray = new byte[romLength];
+    romArray = rom.ReadBytes(romLength);
 }
 
 CHIP8 chip = new CHIP8();
-chip.CarregarROM(romArray);
-chip.Executar();
+chip.LoadROM(romArray);
+chip.Run();
