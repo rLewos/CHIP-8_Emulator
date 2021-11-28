@@ -17,15 +17,17 @@ namespace Chip8
 
         public CHIP8()
         {
-            this.PC = 0x200;
             this.Registers = new byte[16];
+            
+            this.PC = 0x200;
+            this.I = 0x0;
             this.Memory = new byte[4096];
             this.SP = 0x0;
-            this.I = 0x0;
         }
 
         internal void Run()
         {
+            byte registerNumber = 0x0;
             while (true)
             {
                 byte memData = this.Memory.ElementAt(this.PC);
@@ -41,6 +43,7 @@ namespace Chip8
                 switch (instructionNumber)
                 {
                     case 0x0:
+                        this.PC += 1;
                         break;
 
                     case 0x1:
@@ -48,31 +51,41 @@ namespace Chip8
                         break;
 
                     case 0x2:
+                        this.PC += 1;
                         break;
 
                     case 0x3:
+                        this.PC += 1;
                         break;
 
                     case 0x4:
+                        this.PC += 1;
                         break;
 
                     case 0x5:
+                        this.PC += 1;
                         break;
                     
                     case 0x6:
-                        ushort registrador = ((ushort)((ushort)(opcode ^ 0x6000) >> 8));
-                        this.Registers[registrador] = (byte)(registrador << 0x8 ^ opcode ^ 0x6000);
+                        registerNumber = (byte) ((opcode ^ 0x6000) >> 8);
+                        this.Registers[registerNumber] = (byte) (registerNumber << 0x8 ^ opcode ^ 0x6000);
                         this.PC += 1;
 
                         break;
                     
                     case 0x7:
+                        registerNumber = (byte) ((opcode ^ 0x7000) >> 8);
+                        this.Registers[registerNumber] += (byte) (0x7000^(opcode ^ (registerNumber << 8)));
+                        this.PC += 1;
+
                         break;
                     
                     case 0x8:
+                        this.PC += 1;
                         break;
 
                     case 0x9:
+                        this.PC += 1;
                         break;
 
                     case 0xa:
@@ -83,9 +96,11 @@ namespace Chip8
                         break;
 
                     case 0xb:
+                        this.PC += 1;
                         break;
 
                     case 0xc:
+                        this.PC += 1;
                         break;
 
                     case 0xd:
@@ -102,9 +117,11 @@ namespace Chip8
                         break;
 
                     case 0xe:
+                        this.PC += 1;
                         break;
 
                     case 0xf:
+                        this.PC += 1;
                         break;
 
                     default:
@@ -114,75 +131,6 @@ namespace Chip8
                         throw new Exception(error);
                 }
                 #endregion
-
-
-                if (opcode >> 12 == 0x0)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x1)
-                {
-                    this.PC = (ushort)(opcode ^ 0x1000);
-                }
-                else if (opcode >> 12 == 0x2)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x3)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x4)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x5)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x6)
-                {
-                    ushort registrador = ((ushort)((ushort)(opcode ^ 0x6000) >> 8));
-                    this.Registers[registrador] = (byte) (registrador << 0x8 ^ opcode^0x6000);
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x7)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x8)
-                {
-                    this.PC += 1;
-                }
-                else if (opcode >> 12 == 0x9)
-                {
-                    this.PC += 1;
-                }
-                else if(opcode >> 12 == 0xa)
-                {
-                    ushort endereco = (ushort) (opcode ^ 0xa000);
-                    this.I = endereco;
-                    this.PC += 1;
-                }
-
-                else if (opcode >> 12 == 0xd)
-                {
-                    ushort op = (ushort)(opcode ^ 0xd000);
-
-                    ushort registrador_1 = (ushort) (op >> 8);
-                    ushort registrador_2 = (ushort) (op >> 4 ^ registrador_1 << 4);
-
-                    // Apenas retornando dados para ver.
-                    ushort dado_1 = this.Memory[registrador_1];
-                    ushort dado_2 = this.Memory[registrador_2];
-
-                    this.PC += 1;
-                }
-                
-                else if (opcode >> 12 == 0xf)
-                {
-                    this.PC += 1;
-                }
             }
         }
 
