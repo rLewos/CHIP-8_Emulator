@@ -81,6 +81,14 @@ namespace Chip8
                         break;
                     
                     case 0x8:
+
+
+                        byte op = (byte)(opcode ^ 0x8000);
+                        
+
+                        byte registerX = 0x0;
+                        byte registerY = 0x1;
+
                         this.PC += 1;
                         break;
 
