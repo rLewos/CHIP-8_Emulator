@@ -82,12 +82,45 @@ namespace Chip8
                     
                     case 0x8:
 
-
-                        byte op = (byte)(opcode ^ 0x8000);
+                        ushort opcode_8x = (ushort)(opcode ^ 0x8000);
+                        byte mask = (byte) ((0x000 << 4) & opcode_8x);
                         
+                        byte registerX = (byte) (opcode_8x >> 8);
+                        byte registerY = (byte) ((registerX << 8 ^ opcode_8x) >> 4);
 
-                        byte registerX = 0x0;
-                        byte registerY = 0x1;
+                        switch (mask)
+                        {
+                            case 0x0:
+                                this.Registers[registerX] = this.Registers[registerY];
+                                break;
+
+                            case (0x1):
+                                break;
+
+                            case (0x2):
+                                break;
+
+                            case (0x3):
+                                break;
+
+
+                            case (0x4):
+                                break;
+
+
+                            case (0x5):
+                                break;
+
+
+                            case (0x6):
+                                break;
+
+                            case (0x7):
+                                break;
+
+                            case (0xE):
+                                break;
+                        }
 
                         this.PC += 1;
                         break;
