@@ -83,8 +83,9 @@ namespace Chip8
                     case 0x8:
 
                         ushort opcode_8x = (ushort)(opcode ^ 0x8000);
-                        byte mask = (byte) ((0x000 << 4) & opcode_8x);
-                        
+                        byte mask = (byte) ((opcode_8x << 28) >> 28);
+
+
                         byte registerX = (byte) (opcode_8x >> 8);
                         byte registerY = (byte) ((registerX << 8 ^ opcode_8x) >> 4);
 
@@ -95,30 +96,39 @@ namespace Chip8
                                 break;
 
                             case (0x1):
+                                this.Registers[registerX] |= this.Registers[registerY];
                                 break;
 
                             case (0x2):
+                                this.Registers[registerX] &= this.Registers[registerY];
                                 break;
 
                             case (0x3):
+                                this.Registers[registerX] ^= this.Registers[registerY];
                                 break;
-
 
                             case (0x4):
+                                this.Registers[registerX] += this.Registers[registerY];
+                                this.Registers[0xF] = 0x0; // Carry
                                 break;
-
 
                             case (0x5):
+                                this.Registers[registerX] -= this.Registers[registerY];
+                                this.Registers[0xF] = 0x0; // Carry
                                 break;
 
-
                             case (0x6):
+                                this.Registers[registerX] >>= this.Registers[registerY];
+                                this.Registers[0xF] = 0x0; // Carry
                                 break;
 
                             case (0x7):
+                                //this.Registers[registerX] =- this.Registers[registerY];
                                 break;
 
                             case (0xE):
+                                this.Registers[registerX] <<= this.Registers[registerY];
+                                this.Registers[0xF] = 0x0; // Carry
                                 break;
                         }
 
@@ -129,22 +139,22 @@ namespace Chip8
                         this.PC += 1;
                         break;
 
-                    case 0xa:
+                    case 0xA:
                         ushort endereco = (ushort)(opcode ^ 0xa000);
                         this.I = endereco;
                         this.PC += 1;
 
                         break;
 
-                    case 0xb:
+                    case 0xB:
                         this.PC += 1;
                         break;
 
-                    case 0xc:
+                    case 0xC:
                         this.PC += 1;
                         break;
 
-                    case 0xd:
+                    case 0xD:
                         ushort op = (ushort)(opcode ^ 0xd000);
 
                         ushort registrador_1 = (ushort)(op >> 8);
@@ -157,11 +167,11 @@ namespace Chip8
                         this.PC += 1;
                         break;
 
-                    case 0xe:
+                    case 0xE:
                         this.PC += 1;
                         break;
 
-                    case 0xf:
+                    case 0xF:
                         this.PC += 1;
                         break;
 
