@@ -85,7 +85,6 @@ namespace Chip8
                         ushort opcode_8x = (ushort)(opcode ^ 0x8000);
                         byte mask = (byte) ((opcode_8x << 28) >> 28);
 
-
                         byte registerX = (byte) (opcode_8x >> 8);
                         byte registerY = (byte) ((registerX << 8 ^ opcode_8x) >> 4);
 
@@ -108,13 +107,30 @@ namespace Chip8
                                 break;
 
                             case (0x4):
+
+                                int x = this.Registers[registerX];
+                                int y = this.Registers[registerY];
+
+                                if (x + y > byte.MaxValue)
+                                    this.Registers[0xF] = 0x01;
+                                else
+                                    this.Registers[0xF] = 0x00;
+
                                 this.Registers[registerX] += this.Registers[registerY];
-                                this.Registers[0xF] = 0x0; // Carry
+                                
                                 break;
 
                             case (0x5):
+                                
+                                int vx = this.Registers[registerX];
+                                int vy = this.Registers[registerY];
+
+                                if (vx - vy < byte.MinValue)
+                                    this.Registers[0xF] = 0x01;
+                                else
+                                    this.Registers[0xF] = 0x00;
+
                                 this.Registers[registerX] -= this.Registers[registerY];
-                                this.Registers[0xF] = 0x0; // Carry
                                 break;
 
                             case (0x6):
