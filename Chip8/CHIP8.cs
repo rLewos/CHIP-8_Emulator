@@ -71,37 +71,39 @@ namespace Chip8
                         break;
 
                     case 0x2:
-                        this.Stack[this.SP] = 0x0;
-                        this.SP += 2;
-                        this.PC = 0x0;
-
+                        //this.Stack[this.SP] = 0x0;
+                        //this.SP += 2;
+                        //this.PC = 0x0;
+                        this.PC += 1;
                         break;
 
                     case 0x3:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         value = (byte)(opcode & 0x00FF);
                         
-                        if (this.Registers[registerX] == value)
-                            this.PC += 1;
-
+                        //if (this.Registers[registerX] == value)
+                        //    this.PC += 1;
+                        
+                        this.PC += 1;
                         break;
 
                     case 0x4:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         value = (byte)(opcode & 0x00FF);
 
-                        if (this.Registers[registerX] != value)
-                            this.PC += 1;
+                        //if (this.Registers[registerX] != value)
+                        //    this.PC += 1;
 
+                        this.PC += 1;
                         break;
 
                     case 0x5:
-                        registerX = (byte)(opcode & 0x0F00);
-                        registerY = (byte)(opcode & 0x00F0);
+                        registerX = (byte) ((opcode & 0x0F00) >> 8);
+                        registerY = (byte) ((opcode & 0x00F0) >> 4);
 
-                        if (this.Registers[registerX] == this.Registers[registerY])
-                            this.PC += 1;
-
+                        //if (this.Registers[registerX] == this.Registers[registerY])
+                        //    this.PC += 1;
+                        this.PC += 1;
                         break;
 
                     case 0x6:
@@ -119,12 +121,10 @@ namespace Chip8
                         break;
 
                     case 0x8:
-
-                        ushort opcode_8x = (ushort)(opcode ^ 0x8000);
-                        byte mask = (byte)((opcode_8x << 28) >> 28);
-
-                        registerX = (byte)(opcode_8x >> 8);
-                        registerY = (byte)((registerX << 8 ^ opcode_8x) >> 4);
+                       
+                        byte mask = (byte)(opcode & 0x000F);
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        registerY = (byte)((opcode & 0x00F0) >> 4);
 
                         switch (mask)
                         {
@@ -191,27 +191,18 @@ namespace Chip8
                         break;
 
                     case 0x9:
-                        ushort opcode9x = (ushort)(opcode ^ 0x9000);
-                        
-                        byte vx2 = (byte)(opcode9x >> 8);
-                        byte vy2 = (byte)((vx2 << 8 ^ opcode9x) >> 12);
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        registerY = (byte)((opcode & 0x00F0) >> 4);
 
-                        if (this.Registers[vx2] != this.Registers[vy2])
-                        {
+                        if (this.Registers[registerX] != this.Registers[registerY])
+                            //                            this.PC += 2;
+                            ;
 
-                        }
-                        
-                        
                         this.PC += 1;
-
-                        
-
-
                         break;
 
                     case 0xA:
-                        ushort endereco = (ushort)(opcode ^ 0xA000);
-                        this.I = endereco;
+                        this.I = (ushort)(opcode & 0x0FFF);
                         this.PC += 1;
 
                         break;
