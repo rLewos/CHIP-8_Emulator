@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using Chip8;
+﻿using Chip8;
 
 int romLength = 0;
 byte[] romArray;

@@ -11,12 +11,12 @@ namespace Chip8
     {
         private ushort PC;
         private ushort I;
-        private byte SP;
         private byte DelayRegister;
         private byte TimerRegister;
         private byte[] Registers;
         private byte[] Memory;
         private byte[] Stack;
+        private byte SP;
 
         public CHIP8()
         {
@@ -25,15 +25,17 @@ namespace Chip8
             this.PC = 0x200;
             this.I = 0x0;
             this.Memory = new byte[4096];
-            this.SP = 0x0;
+            
             this.DelayRegister = 0x0;
             this.TimerRegister = 0x0;
+            
             this.Stack = new byte[16];
+            this.SP = 0x0;
 
             this.LoadSprites();
         }
 
-        internal void Run()
+        public void Run()
         {
             byte registerNumber = 0x0;
             while (true)
@@ -44,32 +46,62 @@ namespace Chip8
                 byte memData2 = this.Memory.ElementAt(this.PC);
 
                 ushort opcode = (ushort)(memData << 8 | memData2);
-
                 byte instructionNumber = (byte)(opcode >> 12);
+
+                byte registerX = 0x0; // VX
+                byte registerY = 0x0; // VY
+                byte value = 0x0; // KK
+
                 switch (instructionNumber)
                 {
                     case 0x0:
                         this.PC += 1;
                         break;
 
+                    case 0x00E0:
+                        this.PC += 1;
+                        break;
+
+                    case 0x00EE:
+                        this.PC += 1;
+                        break;
+
                     case 0x1:
-                        this.PC = (ushort)(opcode ^ 0x1000);
+                        this.PC = (ushort)(opcode & 0x0FFF);
                         break;
 
                     case 0x2:
-                        this.PC += 1;
+                        this.Stack[this.SP] = 0x0;
+                        this.SP += 2;
+                        this.PC = 0x0;
+
                         break;
 
                     case 0x3:
-                        this.PC += 1;
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        value = (byte)(opcode & 0x00FF);
+                        
+                        if (this.Registers[registerX] == value)
+                            this.PC += 1;
+
                         break;
 
                     case 0x4:
-                        this.PC += 1;
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        value = (byte)(opcode & 0x00FF);
+
+                        if (this.Registers[registerX] != value)
+                            this.PC += 1;
+
                         break;
 
                     case 0x5:
-                        this.PC += 1;
+                        registerX = (byte)(opcode & 0x0F00);
+                        registerY = (byte)(opcode & 0x00F0);
+
+                        if (this.Registers[registerX] == this.Registers[registerY])
+                            this.PC += 1;
+
                         break;
 
                     case 0x6:
@@ -91,8 +123,8 @@ namespace Chip8
                         ushort opcode_8x = (ushort)(opcode ^ 0x8000);
                         byte mask = (byte)((opcode_8x << 28) >> 28);
 
-                        byte registerX = (byte)(opcode_8x >> 8);
-                        byte registerY = (byte)((registerX << 8 ^ opcode_8x) >> 4);
+                        registerX = (byte)(opcode_8x >> 8);
+                        registerY = (byte)((registerX << 8 ^ opcode_8x) >> 4);
 
                         switch (mask)
                         {
@@ -117,26 +149,27 @@ namespace Chip8
                                 int x = this.Registers[registerX];
                                 int y = this.Registers[registerY];
 
+                                this.Registers[registerX] += this.Registers[registerY];
+                                
                                 if (x + y > byte.MaxValue)
                                     this.Registers[(int)RegistersEnum.VF] = 0x01;
                                 else
                                     this.Registers[(int)RegistersEnum.VF] = 0x00;
 
-                                this.Registers[registerX] += this.Registers[registerY];
-
                                 break;
 
                             case 0x5:
 
-                                int vx = this.Registers[registerX];
-                                int vy = this.Registers[registerY];
+                                byte vx = this.Registers[registerX];
+                                byte vy = this.Registers[registerY];
+
+                                this.Registers[registerX] -= this.Registers[registerY];
 
                                 if (vx - vy < byte.MinValue)
                                     this.Registers[(int)RegistersEnum.VF] = 0x00;
                                 else
                                     this.Registers[(int)RegistersEnum.VF] = 0x01;
 
-                                this.Registers[registerX] -= this.Registers[registerY];
                                 break;
 
                             case 0x6:
@@ -158,7 +191,22 @@ namespace Chip8
                         break;
 
                     case 0x9:
+                        ushort opcode9x = (ushort)(opcode ^ 0x9000);
+                        
+                        byte vx2 = (byte)(opcode9x >> 8);
+                        byte vy2 = (byte)((vx2 << 8 ^ opcode9x) >> 12);
+
+                        if (this.Registers[vx2] != this.Registers[vy2])
+                        {
+
+                        }
+                        
+                        
                         this.PC += 1;
+
+                        
+
+
                         break;
 
                     case 0xA:
@@ -219,11 +267,24 @@ namespace Chip8
 
         private void LoadSprites()
         {
-            ushort memoryAddressAllocation = 0x000;
+            ushort memoryAddressAllocation = 0x050;
+
             Sprites.Zero.CopyTo(this.Memory, memoryAddressAllocation);
             Sprites.One.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.Two.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.Three.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Four.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Five.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Six.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Seven.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Eight.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.Nine.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.A.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.B.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.C.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.D.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.E.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+            Sprites.F.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
         }
     }
 }
