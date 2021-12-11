@@ -54,6 +54,7 @@ namespace Chip8
                 byte registerX = 0x0; // VX
                 byte registerY = 0x0; // VY
                 byte value = 0x0; // KK
+
                 byte dataRegisterX = 0x0;
                 byte dataRegisterY = 0x0;
 
@@ -247,11 +248,9 @@ namespace Chip8
 
                         // I Address
                         ushort iAddress = this.I;
-                        
                         byte[] data = this.Memory.Skip(iAddress).Take(bytesToRead).ToArray();
 
-                        
-
+                        this.DrawScreen(data, dataRegisterX, dataRegisterY);
 
                         this.PC += 2;
                         break;
@@ -277,8 +276,8 @@ namespace Chip8
         {
             if (rom == null)
             {
-                Console.WriteLine("A ROM não foi carregada!");
-                throw new ArgumentNullException("A ROM não foi carregada!");
+                Console.WriteLine("ROM was not loaded!");
+                throw new ArgumentNullException("ROM was not loaded!");
             }
 
             rom.CopyTo(this.Memory, 0x200);
@@ -304,6 +303,19 @@ namespace Chip8
             Sprites.D.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.E.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.F.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+        }
+
+        private void DrawScreen(byte[] data, byte dataRegisterX, byte dataRegisterY)
+        {
+            Console.WriteLine("--- DrawCall ---");
+
+            int screenSizeX = this.Screen.GetLength(0);
+            int screenSizeY = this.Screen.GetLength(1);
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                this.Screen[dataRegisterX, dataRegisterY + i] = data[i];
+            }
         }
     }
 }
