@@ -15,21 +15,24 @@ namespace Chip8
         private byte TimerRegister;
         private byte[] Registers;
         private byte[] Memory;
-        private byte[] Stack;
+        private ushort[] Stack;
         private byte SP;
+        private byte[,] Screen;
 
         public CHIP8()
         {
+            this.Screen = new byte[64,32];
+
             this.Registers = new byte[16];
 
             this.PC = 0x200;
             this.I = 0x0;
             this.Memory = new byte[4096];
-            
+
             this.DelayRegister = 0x0;
             this.TimerRegister = 0x0;
-            
-            this.Stack = new byte[16];
+
+            this.Stack = new ushort[16];
             this.SP = 0x0;
 
             this.LoadSprites();
@@ -38,53 +41,69 @@ namespace Chip8
         public void Run()
         {
             byte registerNumber = 0x0;
+
             while (true)
             {
-                byte memData = this.Memory.ElementAt(this.PC);
+                byte opcodeByte = this.Memory.ElementAt(this.PC);
+                byte opcodeByte_2 = this.Memory.ElementAt(this.PC + 1);
 
-                this.PC += 1;
-                byte memData2 = this.Memory.ElementAt(this.PC);
+                ushort opcode = (ushort)(opcodeByte << 8 | opcodeByte_2);
+                Console.WriteLine(string.Format("{0:X}", opcode));
 
-                ushort opcode = (ushort)(memData << 8 | memData2);
                 byte instructionNumber = (byte)(opcode >> 12);
-
                 byte registerX = 0x0; // VX
                 byte registerY = 0x0; // VY
                 byte value = 0x0; // KK
+                byte dataRegisterX = 0x0;
+                byte dataRegisterY = 0x0;
 
                 switch (instructionNumber)
                 {
                     case 0x0:
-                        this.PC += 1;
+
+                        switch (opcode & 0x00FF)
+                        {
+                            case 0xE0:
+                                this.Screen = new byte[64, 32];
+                                break;
+
+                            case 0xEE:
+                                Console.WriteLine("Return from a subroutine.");
+                                break;
+                        }
+
+                        this.PC += 2;
                         break;
 
                     case 0x00E0:
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0x00EE:
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0x1:
                         this.PC = (ushort)(opcode & 0x0FFF);
                         break;
 
-                    case 0x2:
-                        //this.Stack[this.SP] = 0x0;
-                        //this.SP += 2;
-                        //this.PC = 0x0;
-                        this.PC += 1;
+                    case 0x2: 
+                        // There's still something odd.
+                        this.Stack[this.SP] = (ushort) ((this.Memory[this.PC]) << 8 | this.Memory[this.PC + 1]);
+                        this.SP += 1;
+
+                        this.PC = (ushort) (opcode & 0x0FFF);
+
                         break;
 
                     case 0x3:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         value = (byte)(opcode & 0x00FF);
-                        
+
                         //if (this.Registers[registerX] == value)
                         //    this.PC += 1;
-                        
-                        this.PC += 1;
+
+                        this.PC += 2;
                         break;
 
                     case 0x4:
@@ -94,34 +113,34 @@ namespace Chip8
                         //if (this.Registers[registerX] != value)
                         //    this.PC += 1;
 
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0x5:
-                        registerX = (byte) ((opcode & 0x0F00) >> 8);
-                        registerY = (byte) ((opcode & 0x00F0) >> 4);
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        registerY = (byte)((opcode & 0x00F0) >> 4);
 
                         //if (this.Registers[registerX] == this.Registers[registerY])
                         //    this.PC += 1;
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0x6:
-                        registerNumber = (byte)((opcode ^ 0x6000) >> 8);
-                        this.Registers[registerNumber] = (byte)(registerNumber << 0x8 ^ opcode ^ 0x6000);
-                        this.PC += 1;
+                        registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                        this.Registers[registerNumber] = (byte)(opcode & 0x00FF);
 
+                        this.PC += 2;
                         break;
 
                     case 0x7:
                         registerNumber = (byte)((opcode ^ 0x7000) >> 8);
                         this.Registers[registerNumber] += (byte)(0x7000 ^ (opcode ^ (registerNumber << 8)));
-                        this.PC += 1;
+                        this.PC += 2;
 
                         break;
 
                     case 0x8:
-                       
+
                         byte mask = (byte)(opcode & 0x000F);
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         registerY = (byte)((opcode & 0x00F0) >> 4);
@@ -150,7 +169,7 @@ namespace Chip8
                                 int y = this.Registers[registerY];
 
                                 this.Registers[registerX] += this.Registers[registerY];
-                                
+
                                 if (x + y > byte.MaxValue)
                                     this.Registers[(int)RegistersEnum.VF] = 0x01;
                                 else
@@ -187,7 +206,7 @@ namespace Chip8
                                 break;
                         }
 
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0x9:
@@ -198,42 +217,51 @@ namespace Chip8
                             //                            this.PC += 2;
                             ;
 
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0xA:
                         this.I = (ushort)(opcode & 0x0FFF);
-                        this.PC += 1;
 
+                        this.PC += 2;
                         break;
 
                     case 0xB:
-                        this.PC = (ushort)((opcode ^ 0xB000) + this.Registers[(int) RegistersEnum.V0]);
+                        this.PC = (ushort)((opcode ^ 0xB000) + this.Registers[(int)RegistersEnum.V0]);
                         break;
 
                     case 0xC:
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0xD:
-                        ushort op = (ushort)(opcode ^ 0xd000);
 
-                        ushort registrador_1 = (ushort)(op >> 8);
-                        ushort registrador_2 = (ushort)(op >> 4 ^ registrador_1 << 4);
+                        // Registers
+                        registerX = (byte)((opcode & 0x0F00) >> 8);
+                        registerY = (byte)((opcode & 0x00F0) >> 4);
+                        dataRegisterX = this.Registers[registerX];
+                        dataRegisterY = this.Registers[registerY];
 
-                        // Apenas retornando dados para ver.
-                        ushort dado_1 = this.Memory[registrador_1];
-                        ushort dado_2 = this.Memory[registrador_2];
+                        // Bytes to read from memory.
+                        byte bytesToRead = (byte)(opcode & 0x000F);
 
-                        this.PC += 1;
+                        // I Address
+                        ushort iAddress = this.I;
+                        
+                        byte[] data = this.Memory.Skip(iAddress).Take(bytesToRead).ToArray();
+
+                        
+
+
+                        this.PC += 2;
                         break;
 
                     case 0xE:
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     case 0xF:
-                        this.PC += 1;
+                        this.PC += 2;
                         break;
 
                     default:
