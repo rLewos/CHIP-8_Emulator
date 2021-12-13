@@ -101,29 +101,40 @@ namespace Chip8
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         value = (byte)(opcode & 0x00FF);
 
-                        //if (this.Registers[registerX] == value)
-                        //    this.PC += 1;
+                        dataRegisterX = this.Registers[registerX];
 
-                        this.PC += 2;
+                        if (dataRegisterX == value)
+                            this.PC += 4;
+                        else
+                            this.PC += 2;
+
                         break;
 
                     case 0x4:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         value = (byte)(opcode & 0x00FF);
 
-                        //if (this.Registers[registerX] != value)
-                        //    this.PC += 1;
+                        dataRegisterX = this.Registers[registerX];
 
-                        this.PC += 2;
+                        if (dataRegisterX != value)
+                            this.PC += 4;
+                        else
+                            this.PC += 2;
+
                         break;
 
                     case 0x5:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         registerY = (byte)((opcode & 0x00F0) >> 4);
 
-                        //if (this.Registers[registerX] == this.Registers[registerY])
-                        //    this.PC += 1;
-                        this.PC += 2;
+                        dataRegisterX = this.Registers[registerX];
+                        dataRegisterY = this.Registers[registerY];
+
+                        if (dataRegisterX == dataRegisterY)
+                            this.PC += 4;
+                        else
+                            this.PC += 2;
+
                         break;
 
                     case 0x6:
@@ -134,10 +145,15 @@ namespace Chip8
                         break;
 
                     case 0x7:
-                        registerNumber = (byte)((opcode ^ 0x7000) >> 8);
-                        this.Registers[registerNumber] += (byte)(0x7000 ^ (opcode ^ (registerNumber << 8)));
-                        this.PC += 2;
+                        registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                        value = (byte)(opcode & 0x00FF);
 
+                        this.Registers[registerNumber] += value;
+                        
+
+
+
+                        this.PC += 2;
                         break;
 
                     case 0x8:
@@ -214,11 +230,14 @@ namespace Chip8
                         registerX = (byte)((opcode & 0x0F00) >> 8);
                         registerY = (byte)((opcode & 0x00F0) >> 4);
 
-                        if (this.Registers[registerX] != this.Registers[registerY])
-                            //                            this.PC += 2;
-                            ;
+                        dataRegisterX = this.Registers[registerX];
+                        dataRegisterY = this.Registers[registerY];
 
-                        this.PC += 2;
+                        if (dataRegisterX != dataRegisterY)
+                            this.PC += 4;
+                        else
+                            this.PC += 2;
+
                         break;
 
                     case 0xA:
@@ -309,13 +328,13 @@ namespace Chip8
         {
             Console.WriteLine("--- DrawCall ---");
 
-            int screenSizeX = this.Screen.GetLength(0);
-            int screenSizeY = this.Screen.GetLength(1);
-
             for (int i = 0; i < data.Length; i++)
             {
-                this.Screen[dataRegisterX, dataRegisterY + i] = data[i];
+                this.Screen[dataRegisterX, dataRegisterY + i] ^= data[i];
+
             }
+
+
         }
     }
 }
