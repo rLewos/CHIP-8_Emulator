@@ -69,7 +69,9 @@ namespace Chip8
                                 break;
 
                             case 0xEE:
-                                Console.WriteLine("Return from a subroutine.");
+                                this.SP -= 1;
+                                this.PC = this.Stack[this.SP];
+
                                 break;
                         }
 
@@ -89,8 +91,7 @@ namespace Chip8
                         break;
 
                     case 0x2: 
-                        // There's still something odd.
-                        this.Stack[this.SP] = (ushort) ((this.Memory[this.PC]) << 8 | this.Memory[this.PC + 1]);
+                        this.Stack[this.SP] = this.PC;
                         this.SP += 1;
 
                         this.PC = (ushort) (opcode & 0x0FFF);
