@@ -78,14 +78,6 @@ namespace Chip8
                         this.PC += 2;
                         break;
 
-                    //case 0x00E0:
-                    //    this.PC += 2;
-                    //    break;
-
-                    //case 0x00EE:
-                    //    this.PC += 2;
-                    //    break;
-
                     case 0x1:
                         this.PC = (ushort)(opcode & 0x0FFF);
                         break;
@@ -211,7 +203,8 @@ namespace Chip8
 
                             case 0x6:
                                 // TODO
-                                this.Registers[registerX] >>= this.Registers[registerY];
+                                dataRegisterY = this.Registers[registerY];
+                                this.Registers[registerX] = (byte)(dataRegisterY >> 1);
                                 this.Registers[(int)RegistersEnum.VF] = 0x0;
                                 break;
 
@@ -222,7 +215,8 @@ namespace Chip8
 
                             case 0xE:
                                 // TODO
-                                this.Registers[registerX] <<= this.Registers[registerY];
+                                dataRegisterY = this.Registers[registerY];
+                                this.Registers[registerX] = (byte)(dataRegisterY << 1);
                                 this.Registers[(int)RegistersEnum.VF] = 0x0;
                                 break;
                         }
