@@ -78,13 +78,13 @@ namespace Chip8
                         this.PC += 2;
                         break;
 
-                    case 0x00E0:
-                        this.PC += 2;
-                        break;
+                    //case 0x00E0:
+                    //    this.PC += 2;
+                    //    break;
 
-                    case 0x00EE:
-                        this.PC += 2;
-                        break;
+                    //case 0x00EE:
+                    //    this.PC += 2;
+                    //    break;
 
                     case 0x1:
                         this.PC = (ushort)(opcode & 0x0FFF);
@@ -210,15 +210,18 @@ namespace Chip8
                                 break;
 
                             case 0x6:
+                                // TODO
                                 this.Registers[registerX] >>= this.Registers[registerY];
                                 this.Registers[(int)RegistersEnum.VF] = 0x0;
                                 break;
 
                             case 0x7:
+                                // TODO
                                 //this.Registers[registerX] =- this.Registers[registerY];
                                 break;
 
                             case 0xE:
+                                // TODO
                                 this.Registers[registerX] <<= this.Registers[registerY];
                                 this.Registers[(int)RegistersEnum.VF] = 0x0;
                                 break;
@@ -252,10 +255,12 @@ namespace Chip8
                         break;
 
                     case 0xC:
+                        // TODO
                         this.PC += 2;
                         break;
 
                     case 0xD:
+                        // TODO
 
                         // Registers
                         registerX = (byte)((opcode & 0x0F00) >> 8);
@@ -276,10 +281,63 @@ namespace Chip8
                         break;
 
                     case 0xE:
+                        // TODO
+
+                        switch (opcode & 0x00FF)
+                        {
+                            case 0x9E:
+                                
+                                break;
+
+                            case 0xA1:
+
+                                break;
+
+                            default:
+                                Console.WriteLine(String.Format("Error | Opcode xE doesn't exist: {0}", opcode));
+                                break;
+                        }
+
                         this.PC += 2;
                         break;
 
                     case 0xF:
+                        // TODO
+
+                        switch (opcode & 0x00FF)
+                        {
+                            case 0x07:
+                                break;
+
+                            case 0x0A:
+                                break;
+
+                            case 0x15:
+                                break;
+
+                            case 0x18:
+                                break;
+
+                            case 0x1E:
+                                break;
+
+                            case 0x29:
+                                break;
+
+                            case 0x33:
+                                break;
+                            
+                            case 0x55:
+                                break;
+
+                            case 0x65:
+                                break;
+
+                            default:
+                                Console.WriteLine(String.Format("Error | Opcode xF doesn't exist: {0}", opcode));
+                                break;
+                        }
+
                         this.PC += 2;
                         break;
 
@@ -331,8 +389,7 @@ namespace Chip8
 
             for (int i = 0; i < data.Length; i++)
             {
-                this.Screen[dataRegisterX, dataRegisterY + i] ^= data[i];
-
+                this.Screen[dataRegisterX + i, dataRegisterY] ^= data[i];
             }
 
 
