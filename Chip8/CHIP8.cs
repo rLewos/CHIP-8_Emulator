@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDL2;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -92,8 +93,8 @@ namespace Chip8
 
                     case 0x3:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
+                        
                         value = (byte)(opcode & 0x00FF);
-
                         dataRegisterX = this.Registers[registerX];
 
                         if (dataRegisterX == value)
@@ -105,8 +106,8 @@ namespace Chip8
 
                     case 0x4:
                         registerX = (byte)((opcode & 0x0F00) >> 8);
+                        
                         value = (byte)(opcode & 0x00FF);
-
                         dataRegisterX = this.Registers[registerX];
 
                         if (dataRegisterX != value)
@@ -142,8 +143,6 @@ namespace Chip8
                         value = (byte)(opcode & 0x00FF);
 
                         this.Registers[registerNumber] += value;
-                        
-
 
 
                         this.PC += 2;
@@ -175,12 +174,12 @@ namespace Chip8
 
                             case 0x4:
 
-                                int x = this.Registers[registerX];
-                                int y = this.Registers[registerY];
+                                dataRegisterX = this.Registers[registerX];
+                                dataRegisterY = this.Registers[registerY];
 
                                 this.Registers[registerX] += this.Registers[registerY];
 
-                                if (x + y > byte.MaxValue)
+                                if (dataRegisterX + dataRegisterY > byte.MaxValue)
                                     this.Registers[(int)RegistersEnum.VF] = 0x01;
                                 else
                                     this.Registers[(int)RegistersEnum.VF] = 0x00;
@@ -189,12 +188,12 @@ namespace Chip8
 
                             case 0x5:
 
-                                byte vx = this.Registers[registerX];
-                                byte vy = this.Registers[registerY];
+                                dataRegisterX = this.Registers[registerX];
+                                dataRegisterY = this.Registers[registerY];
 
                                 this.Registers[registerX] -= this.Registers[registerY];
 
-                                if (vx - vy < byte.MinValue)
+                                if (dataRegisterX - dataRegisterY < byte.MinValue)
                                     this.Registers[(int)RegistersEnum.VF] = 0x00;
                                 else
                                     this.Registers[(int)RegistersEnum.VF] = 0x01;
@@ -204,20 +203,36 @@ namespace Chip8
                             case 0x6:
                                 // TODO
                                 dataRegisterY = this.Registers[registerY];
+
                                 this.Registers[registerX] = (byte)(dataRegisterY >> 1);
-                                this.Registers[(int)RegistersEnum.VF] = 0x0;
+                                // Get the LSB.
+
+                                this.Registers[(int)RegistersEnum.VF] = 0x00;
                                 break;
 
                             case 0x7:
-                                // TODO
-                                //this.Registers[registerX] =- this.Registers[registerY];
+
+                                dataRegisterX = this.Registers[registerX];
+                                dataRegisterY = this.Registers[registerY];
+
+                                this.Registers[registerX] = (byte)(dataRegisterY - dataRegisterX);
+
+                                if (byte.MinValue < (dataRegisterY - dataRegisterX))
+                                    this.Registers[(int)RegistersEnum.VF] = 0x00;
+                                else
+                                    this.Registers[(int)RegistersEnum.VF] = 0x01;
+
                                 break;
 
                             case 0xE:
                                 // TODO
+                                
                                 dataRegisterY = this.Registers[registerY];
                                 this.Registers[registerX] = (byte)(dataRegisterY << 1);
+                                // Get the MSB.
+
                                 this.Registers[(int)RegistersEnum.VF] = 0x0;
+
                                 break;
                         }
 
@@ -316,15 +331,37 @@ namespace Chip8
                                 break;
 
                             case 0x29:
+                                registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                                dataRegisterX = this.Registers[registerNumber];
+
+
+
+
                                 break;
 
                             case 0x33:
+                                // TODO
+                                registerNumber = (byte)((opcode & 0x0F00) >> 8);
                                 break;
                             
                             case 0x55:
+                                registerNumber = (byte)((opcode & 0x0F00) >> 8);
+
+                                for (int i = 0; i <= registerNumber; i++)
+                                    this.Memory[this.I + i] = this.Registers[i];
+
+                                this.I = (ushort)(this.I + registerNumber + 1);
+
                                 break;
 
                             case 0x65:
+                                registerNumber = (byte)((opcode & 0x0F00) >> 8);
+
+                                for (int i = 0; i <= registerNumber; i++)
+                                    this.Registers[i] = this.Memory[this.I + i];
+
+                                this.I = (ushort)(this.I + registerNumber + 1);
+
                                 break;
 
                             default:
@@ -385,8 +422,6 @@ namespace Chip8
             {
                 this.Screen[dataRegisterX + i, dataRegisterY] ^= data[i];
             }
-
-
         }
     }
 }
