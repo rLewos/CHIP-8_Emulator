@@ -16,23 +16,32 @@ namespace Chip8
         public CHIP8Screen()
         {
             this.Window = IntPtr.Zero;
+            this.Renderer = IntPtr.Zero;
         }
 
-        public void InitializeWindow()
+        public bool InitializeWindow()
         {
             SDL.SDL_Init(SDL.SDL_INIT_VIDEO);
 
             Window = SDL.SDL_CreateWindow("CHIP8 Emulator",
                 SDL.SDL_WINDOWPOS_CENTERED,
                 SDL.SDL_WINDOWPOS_CENTERED,
-                800,
-                600,
+                64,
+                32,
                 SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE);
+
+            if (this.Window == IntPtr.Zero)
+            {
+                Console.WriteLine("Could not initialize window: {0}", SDL.SDL_GetError());
+                return false;
+            }
+
+            return true;
         }
 
         public bool InitializeRenderer()
         {
-            Renderer = SDL.SDL_CreateRenderer(this.Window, -1, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
+            Renderer = SDL.SDL_CreateRenderer(this.Window, -1, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
             
             if (Renderer == IntPtr.Zero)
             {
@@ -43,16 +52,6 @@ namespace Chip8
             return true;
         }
 
-        public void CreateTexture(string fileName)
-        {
-            Texture = SDL_image.IMG_LoadTexture(this.Window, fileName);
-            
-            if (Texture == IntPtr.Zero)
-            {
-                Console.WriteLine("Could not initialize player texture: {0}", SDL.SDL_GetError());
-            }
-        }
-        
         public void Close()
         {
             SDL.SDL_DestroyTexture(Texture);
