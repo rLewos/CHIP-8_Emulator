@@ -271,8 +271,8 @@ namespace Chip8
                     break;
 
                 case 0xD:
-                    // TODO
 
+                    // TODO
                     // Registers
                     registerX = (byte)((opcode & 0x0F00) >> 8);
                     registerY = (byte)((opcode & 0x00F0) >> 4);
@@ -390,6 +390,7 @@ namespace Chip8
 
                             this.I = (ushort)(this.I + registerNumber + 1);
                             break;
+
 
                         default:
                             Console.WriteLine(String.Format("Error | Opcode xF doesn't exist: {0}", opcode));
