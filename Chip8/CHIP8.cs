@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDL2;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -38,250 +39,382 @@ namespace Chip8
             this.LoadSprites();
         }
 
-        public void Run()
+        public ushort Fetch()
+        {
+            return (ushort)((this.Memory.ElementAt(this.PC)) << 8 | this.Memory.ElementAt(this.PC + 1));
+        }
+
+        public void RunCicle()
         {
             byte registerNumber = 0x0;
 
-            while (true)
+            ushort opcode = this.Fetch();
+            Console.WriteLine(string.Format("Opcode: {0:X}", opcode));
+
+            byte instructionNumber = (byte)(opcode >> 12);
+            byte registerX = 0x0; // VX
+            byte registerY = 0x0; // VY
+            byte value = 0x0; // KK
+
+            byte dataRegisterX = 0x0;
+            byte dataRegisterY = 0x0;
+
+            switch (instructionNumber)
             {
-                byte opcodeByte = this.Memory.ElementAt(this.PC);
-                byte opcodeByte_2 = this.Memory.ElementAt(this.PC + 1);
+                case 0x0:
 
-                ushort opcode = (ushort)(opcodeByte << 8 | opcodeByte_2);
-                Console.WriteLine(string.Format("{0:X}", opcode));
+                    switch (opcode & 0x00FF)
+                    {
+                        case 0xE0:
+                            this.Screen = new byte[64, 32];
+                            break;
 
-                byte instructionNumber = (byte)(opcode >> 12);
-                byte registerX = 0x0; // VX
-                byte registerY = 0x0; // VY
-                byte value = 0x0; // KK
-                byte dataRegisterX = 0x0;
-                byte dataRegisterY = 0x0;
+                        case 0xEE:
+                            this.SP -= 1;
+                            this.PC = this.Stack[this.SP];
 
-                switch (instructionNumber)
-                {
-                    case 0x0:
+                            break;
+                    }
 
-                        switch (opcode & 0x00FF)
-                        {
-                            case 0xE0:
-                                this.Screen = new byte[64, 32];
-                                break;
+                    this.PC += 2;
+                    break;
 
-                            case 0xEE:
-                                Console.WriteLine("Return from a subroutine.");
-                                break;
-                        }
+                case 0x1:
+                    this.PC = (ushort)(opcode & 0x0FFF);
+                    break;
 
-                        this.PC += 2;
-                        break;
+                case 0x2:
+                    this.Stack[this.SP] = this.PC;
+                    this.SP += 1;
 
-                    case 0x00E0:
-                        this.PC += 2;
-                        break;
+                    this.PC = (ushort)(opcode & 0x0FFF);
 
-                    case 0x00EE:
-                        this.PC += 2;
-                        break;
+                    break;
 
-                    case 0x1:
-                        this.PC = (ushort)(opcode & 0x0FFF);
-                        break;
+                case 0x3:
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
 
-                    case 0x2: 
-                        // There's still something odd.
-                        this.Stack[this.SP] = (ushort) ((this.Memory[this.PC]) << 8 | this.Memory[this.PC + 1]);
-                        this.SP += 1;
+                    value = (byte)(opcode & 0x00FF);
+                    dataRegisterX = this.Registers[registerX];
 
-                        this.PC = (ushort) (opcode & 0x0FFF);
-
-                        break;
-
-                    case 0x3:
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        value = (byte)(opcode & 0x00FF);
-
-                        //if (this.Registers[registerX] == value)
-                        //    this.PC += 1;
-
-                        this.PC += 2;
-                        break;
-
-                    case 0x4:
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        value = (byte)(opcode & 0x00FF);
-
-                        //if (this.Registers[registerX] != value)
-                        //    this.PC += 1;
-
-                        this.PC += 2;
-                        break;
-
-                    case 0x5:
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        registerY = (byte)((opcode & 0x00F0) >> 4);
-
-                        //if (this.Registers[registerX] == this.Registers[registerY])
-                        //    this.PC += 1;
-                        this.PC += 2;
-                        break;
-
-                    case 0x6:
-                        registerNumber = (byte)((opcode & 0x0F00) >> 8);
-                        this.Registers[registerNumber] = (byte)(opcode & 0x00FF);
-
-                        this.PC += 2;
-                        break;
-
-                    case 0x7:
-                        registerNumber = (byte)((opcode ^ 0x7000) >> 8);
-                        this.Registers[registerNumber] += (byte)(0x7000 ^ (opcode ^ (registerNumber << 8)));
+                    if (dataRegisterX == value)
+                        this.PC += 4;
+                    else
                         this.PC += 2;
 
-                        break;
+                    break;
 
-                    case 0x8:
+                case 0x4:
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
 
-                        byte mask = (byte)(opcode & 0x000F);
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        registerY = (byte)((opcode & 0x00F0) >> 4);
+                    value = (byte)(opcode & 0x00FF);
+                    dataRegisterX = this.Registers[registerX];
 
-                        switch (mask)
-                        {
-                            case 0x0:
-                                this.Registers[registerX] = this.Registers[registerY];
-                                break;
-
-                            case 0x1:
-                                this.Registers[registerX] |= this.Registers[registerY];
-                                break;
-
-                            case 0x2:
-                                this.Registers[registerX] &= this.Registers[registerY];
-                                break;
-
-                            case 0x3:
-                                this.Registers[registerX] ^= this.Registers[registerY];
-                                break;
-
-                            case 0x4:
-
-                                int x = this.Registers[registerX];
-                                int y = this.Registers[registerY];
-
-                                this.Registers[registerX] += this.Registers[registerY];
-
-                                if (x + y > byte.MaxValue)
-                                    this.Registers[(int)RegistersEnum.VF] = 0x01;
-                                else
-                                    this.Registers[(int)RegistersEnum.VF] = 0x00;
-
-                                break;
-
-                            case 0x5:
-
-                                byte vx = this.Registers[registerX];
-                                byte vy = this.Registers[registerY];
-
-                                this.Registers[registerX] -= this.Registers[registerY];
-
-                                if (vx - vy < byte.MinValue)
-                                    this.Registers[(int)RegistersEnum.VF] = 0x00;
-                                else
-                                    this.Registers[(int)RegistersEnum.VF] = 0x01;
-
-                                break;
-
-                            case 0x6:
-                                this.Registers[registerX] >>= this.Registers[registerY];
-                                this.Registers[(int)RegistersEnum.VF] = 0x0;
-                                break;
-
-                            case 0x7:
-                                //this.Registers[registerX] =- this.Registers[registerY];
-                                break;
-
-                            case 0xE:
-                                this.Registers[registerX] <<= this.Registers[registerY];
-                                this.Registers[(int)RegistersEnum.VF] = 0x0;
-                                break;
-                        }
-
+                    if (dataRegisterX != value)
+                        this.PC += 4;
+                    else
                         this.PC += 2;
-                        break;
 
-                    case 0x9:
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        registerY = (byte)((opcode & 0x00F0) >> 4);
+                    break;
 
-                        if (this.Registers[registerX] != this.Registers[registerY])
-                            //                            this.PC += 2;
-                            ;
+                case 0x5:
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
+                    registerY = (byte)((opcode & 0x00F0) >> 4);
 
+                    dataRegisterX = this.Registers[registerX];
+                    dataRegisterY = this.Registers[registerY];
+
+                    if (dataRegisterX == dataRegisterY)
+                        this.PC += 4;
+                    else
                         this.PC += 2;
-                        break;
 
-                    case 0xA:
-                        this.I = (ushort)(opcode & 0x0FFF);
+                    break;
 
+                case 0x6:
+                    registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                    this.Registers[registerNumber] = (byte)(opcode & 0x00FF);
+
+                    this.PC += 2;
+                    break;
+
+                case 0x7:
+                    registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                    value = (byte)(opcode & 0x00FF);
+
+                    this.Registers[registerNumber] += value;
+
+
+                    this.PC += 2;
+                    break;
+
+                case 0x8:
+
+                    byte mask = (byte)(opcode & 0x000F);
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
+                    registerY = (byte)((opcode & 0x00F0) >> 4);
+
+                    switch (mask)
+                    {
+                        case 0x0:
+                            this.Registers[registerX] = this.Registers[registerY];
+                            break;
+
+                        case 0x1:
+                            this.Registers[registerX] |= this.Registers[registerY];
+                            break;
+
+                        case 0x2:
+                            this.Registers[registerX] &= this.Registers[registerY];
+                            break;
+
+                        case 0x3:
+                            this.Registers[registerX] ^= this.Registers[registerY];
+                            break;
+
+                        case 0x4:
+
+                            dataRegisterX = this.Registers[registerX];
+                            dataRegisterY = this.Registers[registerY];
+
+                            this.Registers[registerX] += this.Registers[registerY];
+
+                            if (dataRegisterX + dataRegisterY > byte.MaxValue)
+                                this.Registers[(int)RegistersEnum.VF] = 0x01;
+                            else
+                                this.Registers[(int)RegistersEnum.VF] = 0x00;
+
+                            break;
+
+                        case 0x5:
+
+                            dataRegisterX = this.Registers[registerX];
+                            dataRegisterY = this.Registers[registerY];
+
+                            this.Registers[registerX] -= this.Registers[registerY];
+
+                            if (dataRegisterX - dataRegisterY < byte.MinValue)
+                                this.Registers[(int)RegistersEnum.VF] = 0x00;
+                            else
+                                this.Registers[(int)RegistersEnum.VF] = 0x01;
+
+                            break;
+
+                        case 0x6:
+                            // TODO
+                            dataRegisterY = this.Registers[registerY];
+
+                            this.Registers[registerX] = (byte)(dataRegisterY >> 1);
+                            // Get the LSB.
+
+                            this.Registers[(int)RegistersEnum.VF] = 0x00;
+                            break;
+
+                        case 0x7:
+
+                            dataRegisterX = this.Registers[registerX];
+                            dataRegisterY = this.Registers[registerY];
+
+                            this.Registers[registerX] = (byte)(dataRegisterY - dataRegisterX);
+
+                            if (byte.MinValue < (dataRegisterY - dataRegisterX))
+                                this.Registers[(int)RegistersEnum.VF] = 0x00;
+                            else
+                                this.Registers[(int)RegistersEnum.VF] = 0x01;
+
+                            break;
+
+                        case 0xE:
+                            // TODO
+
+                            dataRegisterY = this.Registers[registerY];
+                            this.Registers[registerX] = (byte)(dataRegisterY << 1);
+                            // Get the MSB.
+
+                            this.Registers[(int)RegistersEnum.VF] = 0x0;
+
+                            break;
+                    }
+
+                    this.PC += 2;
+                    break;
+
+                case 0x9:
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
+                    registerY = (byte)((opcode & 0x00F0) >> 4);
+
+                    dataRegisterX = this.Registers[registerX];
+                    dataRegisterY = this.Registers[registerY];
+
+                    if (dataRegisterX != dataRegisterY)
+                        this.PC += 4;
+                    else
                         this.PC += 2;
-                        break;
 
-                    case 0xB:
-                        this.PC = (ushort)((opcode ^ 0xB000) + this.Registers[(int)RegistersEnum.V0]);
-                        break;
+                    break;
 
-                    case 0xC:
-                        this.PC += 2;
-                        break;
+                case 0xA:
+                    this.I = (ushort)(opcode & 0x0FFF);
 
-                    case 0xD:
+                    this.PC += 2;
+                    break;
 
-                        // Registers
-                        registerX = (byte)((opcode & 0x0F00) >> 8);
-                        registerY = (byte)((opcode & 0x00F0) >> 4);
-                        dataRegisterX = this.Registers[registerX];
-                        dataRegisterY = this.Registers[registerY];
+                case 0xB:
+                    this.PC = (ushort)((opcode ^ 0xB000) + this.Registers[(int)RegistersEnum.V0]);
+                    break;
 
-                        // Bytes to read from memory.
-                        byte bytesToRead = (byte)(opcode & 0x000F);
+                case 0xC:
+                    // TODO
+                    this.PC += 2;
+                    break;
 
-                        // I Address
-                        ushort iAddress = this.I;
-                        
-                        byte[] data = this.Memory.Skip(iAddress).Take(bytesToRead).ToArray();
+                case 0xD:
+                    // TODO
 
-                        
+                    // Registers
+                    registerX = (byte)((opcode & 0x0F00) >> 8);
+                    registerY = (byte)((opcode & 0x00F0) >> 4);
+                    dataRegisterX = this.Registers[registerX];
+                    dataRegisterY = this.Registers[registerY];
+
+                    // Bytes to read from memory.
+                    byte bytesToRead = (byte)(opcode & 0x000F);
+
+                    // I Address
+                    ushort iAddress = this.I;
+                    byte[] data = this.Memory.Skip(iAddress).Take(bytesToRead).ToArray();
+
+                    this.DrawScreen(data, dataRegisterX, dataRegisterY);
+
+                    this.PC += 2;
+                    break;
+
+                case 0xE:
+                    // TODO
+
+                    switch (opcode & 0x00FF)
+                    {
+                        case 0x9E:
+
+                            break;
+
+                        case 0xA1:
+
+                            break;
+
+                        default:
+                            Console.WriteLine(String.Format("Error | Opcode xE doesn't exist: {0}", opcode));
+                            break;
+                    }
+
+                    this.PC += 2;
+                    break;
+
+                case 0xF:
+                    // TODO
+
+                    switch (opcode & 0x00FF)
+                    {
+                        case 0x07:
+                            break;
+
+                        case 0x0A:
+                            break;
+
+                        case 0x15:
+                            break;
+
+                        case 0x18:
+                            break;
+
+                        case 0x1E:
+                            break;
+
+                        case 0x29:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            dataRegisterX = this.Registers[registerNumber];
 
 
-                        this.PC += 2;
-                        break;
 
-                    case 0xE:
-                        this.PC += 2;
-                        break;
 
-                    case 0xF:
-                        this.PC += 2;
-                        break;
+                            break;
 
-                    default:
-                        string error = String.Format("Instruction not implemented: {0}", opcode);
+                        case 0x33:
+                            // TODO
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            dataRegisterX = this.Registers[registerNumber];
 
-                        Debug.WriteLine(error);
-                        throw new Exception(error);
-                }
+                            byte bdc =  (byte)((dataRegisterX & 0xF0) >> 4);
+                            byte bdc2 = (byte)(dataRegisterX & 0x0F);
+                            byte bdc3 = 0x0;
+
+                            this.Memory[this.I] = bdc;
+                            this.Memory[this.I + 1] = bdc2;
+                            this.Memory[this.I + 2] = bdc3;
+
+                            break;
+
+                        case 0x55:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+
+                            for (int i = 0; i <= registerNumber; i++)
+                                this.Memory[this.I + i] = this.Registers[i];
+
+                            this.I = (ushort)(this.I + registerNumber + 1);
+
+                            break;
+
+                        case 0x65:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+
+                            for (int i = 0; i <= registerNumber; i++)
+                                this.Registers[i] = this.Memory[this.I + i];
+
+                            this.I = (ushort)(this.I + registerNumber + 1);
+
+                            break;
+
+                        default:
+                            Console.WriteLine(String.Format("Error | Opcode xF doesn't exist: {0}", opcode));
+                            break;
+                    }
+
+                    this.PC += 2;
+                    break;
+
+                default:
+                    string error = String.Format("Instruction not implemented: {0}", opcode);
+
+                    Debug.WriteLine(error);
+                    throw new Exception(error);
             }
         }
 
-        public void LoadROM(byte[] rom)
+        public bool LoadROM(string romName)
         {
-            if (rom == null)
+            bool isLoaded = false;
+
+            using (BinaryReader rom = new BinaryReader(File.Open(romName, FileMode.Open)))
             {
-                Console.WriteLine("A ROM não foi carregada!");
-                throw new ArgumentNullException("A ROM não foi carregada!");
+                if (rom == null)
+                {
+                    Console.WriteLine("ROM was not loaded!");
+                }
+                else
+                {
+                    int romLength = 0;
+                    byte[] romArray;
+
+                    romLength = Convert.ToInt32(rom.BaseStream.Length);
+                    romArray = new byte[romLength];
+                    romArray = rom.ReadBytes(romLength);
+
+                    romArray.CopyTo(this.Memory, 0x200);
+                    isLoaded = true;
+                }
             }
 
-            rom.CopyTo(this.Memory, 0x200);
+            return isLoaded;
         }
 
         private void LoadSprites()
@@ -304,6 +437,16 @@ namespace Chip8
             Sprites.D.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.E.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
             Sprites.F.CopyTo(this.Memory, memoryAddressAllocation += 0x005);
+        }
+
+        private void DrawScreen(byte[] data, byte dataRegisterX, byte dataRegisterY)
+        {
+            Console.WriteLine("--- DrawCall ---");
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                this.Screen[dataRegisterX + i, dataRegisterY] ^= data[i];
+            }
         }
     }
 }
