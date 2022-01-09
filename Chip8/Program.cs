@@ -9,7 +9,7 @@ if (screen.InitializeWindow() && screen.InitializeRenderer())
     bool quit = false;
 
     CHIP8 chip = new CHIP8();
-    if (chip.LoadROM("test_opcode.ch8"))
+    if (chip.LoadROM("Space Invaders [David Winter].ch8"))
     {
         Random random = new Random();
         while (!quit)

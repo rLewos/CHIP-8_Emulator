@@ -19,6 +19,7 @@ namespace Chip8
         private ushort[] Stack;
         private byte SP;
         private byte[,] Screen;
+        private byte SoundTimer;
 
         public CHIP8()
         {
@@ -32,6 +33,7 @@ namespace Chip8
 
             this.DelayRegister = 0x0;
             this.TimerRegister = 0x0;
+            this.SoundTimer = 0x0;
 
             this.Stack = new ushort[16];
             this.SP = 0x0;
@@ -290,8 +292,8 @@ namespace Chip8
                     break;
 
                 case 0xE:
+                    
                     // TODO
-
                     switch (opcode & 0x00FF)
                     {
                         case 0x9E:
@@ -311,29 +313,46 @@ namespace Chip8
                     break;
 
                 case 0xF:
+                    
                     // TODO
-
                     switch (opcode & 0x00FF)
                     {
                         case 0x07:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            this.Registers[registerNumber] = this.DelayRegister;
+
                             break;
 
                         case 0x0A:
+                            // TODO
+
                             break;
 
                         case 0x15:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            dataRegisterX = this.Registers[registerNumber];
+                            this.DelayRegister = dataRegisterX;
+
                             break;
 
                         case 0x18:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            dataRegisterX = this.Registers[registerNumber];
+                            this.SoundTimer = dataRegisterX;
+
                             break;
 
                         case 0x1E:
+                            registerNumber = (byte)((opcode & 0x0F00) >> 8);
+                            dataRegisterX = this.Registers[registerNumber];
+                            this.I = (ushort)(this.I + (ushort) dataRegisterX);
+
                             break;
 
                         case 0x29:
+                            // TODO
                             registerNumber = (byte)((opcode & 0x0F00) >> 8);
                             dataRegisterX = this.Registers[registerNumber];
-
 
 
 
@@ -361,7 +380,6 @@ namespace Chip8
                                 this.Memory[this.I + i] = this.Registers[i];
 
                             this.I = (ushort)(this.I + registerNumber + 1);
-
                             break;
 
                         case 0x65:
@@ -371,7 +389,6 @@ namespace Chip8
                                 this.Registers[i] = this.Memory[this.I + i];
 
                             this.I = (ushort)(this.I + registerNumber + 1);
-
                             break;
 
                         default:
